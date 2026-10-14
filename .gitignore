@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.runtime-key
+public/app.js
+public/styles.css
+.DS_Store
