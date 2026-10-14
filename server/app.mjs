@@ -53,7 +53,12 @@ export function createApp(
     });
   });
   app.get(
-    ["/api/cron/daily", "/api/cron/reminders", "/api/cron/backups"],
+    [
+      "/api/cron/daily",
+      "/api/cron/reminders",
+      "/api/cron/backups",
+      "/api/cron/verify-email",
+    ],
     async (req, res) => {
       if (
         !env.CRON_SECRET ||
@@ -62,6 +67,8 @@ export function createApp(
       )
         return res.status(401).json({ error: "Invalid scheduler credentials" });
       const jobs = {};
+      if (req.path === "/api/cron/verify-email")
+        return res.json({ email: await email.verify() });
       if (req.path !== "/api/cron/backups")
         try {
           jobs.reminders = (await email.enabled())
@@ -90,11 +97,9 @@ export function createApp(
       !req.headers.authorization ||
       hash(req.headers.authorization) !== hash(`Bearer ${env.CRON_SECRET}`)
     )
-      return res
-        .status(403)
-        .json({
-          error: "Migration is disabled or scheduler credentials are invalid",
-        });
+      return res.status(403).json({
+        error: "Migration is disabled or scheduler credentials are invalid",
+      });
     if (await store.getAdmin())
       return res
         .status(409)

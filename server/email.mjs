@@ -143,6 +143,18 @@ export function emailService(store, env) {
     configured: async () => !!(await config())?.host,
     enabled: async () => !!(await config())?.enabled,
     save,
+    verify: async () => {
+      const c = await config();
+      if (!c?.host)
+        throw Object.assign(Error("SMTP is not configured"), { status: 503 });
+      const t = transport(c);
+      try {
+        await t.verify();
+        return { verified: true };
+      } finally {
+        t.close();
+      }
+    },
     send: async (mail) => {
       const c = await config();
       if (!c?.host || !c.enabled)

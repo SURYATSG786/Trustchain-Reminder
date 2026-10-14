@@ -98,7 +98,7 @@ This is a single-organization application with an owner and up to 19 additional 
 
 The audit chain is tamper-evident under the application's checks, with three leading hexadecimal zeroes required for Proof of Work. It is not a distributed blockchain or externally anchored ledger; a privileged database operator could re-mine a replacement. Restrict database access and keep independent backups/audit exports.
 
-Local development binds to loopback. The Vercel entry point exports Express without a permanent listener or background timers. Public deployment has not been performed. See `VERCEL_DEPLOY.md` for Atlas, encryption keys, authenticated daily cron, independent backup storage and disaster recovery. Development tooling uses esbuild for JSX bundling and Tailwind CLI for styles; the runtime has no additional frontend or backend framework.
+Local development binds to loopback. The Vercel entry point exports Express without a permanent listener or background timers. The application is deployed at https://trustchain-reminder.vercel.app. See `VERCEL_DEPLOY.md` for Atlas, encryption keys, authenticated daily cron, independent backup storage and disaster recovery. Development tooling uses esbuild for JSX bundling and Tailwind CLI for styles; the runtime has no additional frontend or backend framework.
 
 ## Administrators and recovery
 

@@ -60,7 +60,7 @@ Supply the original `BACKUP_ENCRYPTION_KEY`. Restore verifies authenticated encr
 
 ## Deployment verification
 
-The local build and integration tests pass, including owner/admin restrictions, password/session revocation, independent backup storage and actual CLI recovery into a new MongoDB database. Live NPTEL verification succeeded for the supplied Blockchain certificate. The Vercel adapter is tested locally; an actual Vercel deployment, Atlas connectivity, scheduled execution and inbox delivery from Vercel still require verification in your deployed account.
+The local build and integration tests pass, including owner/admin restrictions, password/session revocation, independent backup storage and actual CLI recovery into a new MongoDB database. Live NPTEL verification succeeded for the supplied Blockchain certificate. The Vercel adapter is tested locally; the production Vercel deployment and Atlas connectivity are verified at https://trustchain-reminder.vercel.app. Authenticated reminder and backup requests succeeded. Future automatic scheduled invocation and inbox delivery from Vercel are distinct from those checks.
 
 Official platform references: [Express on Vercel](https://vercel.com/docs/frameworks/backend/express), [Cron usage limits](https://vercel.com/docs/cron-jobs/usage-and-pricing), [Managing cron jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs).
 

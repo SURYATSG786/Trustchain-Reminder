@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import net from "node:net";
+import { emailService } from "../server/email.mjs";
 import { createApp } from "../server/app.mjs";
 import { createTestStore as createStore } from "./helpers.mjs";
 test("Nodemailer sends due reminders to a local SMTP test server, records delivery and avoids same-day duplicates", async (t) => {
@@ -52,6 +53,14 @@ test("Nodemailer sends due reminders to a local SMTP test server, records delive
     SMTP_PORT: smtp.address().port,
     SMTP_FROM: "test@example.com",
   });
+  assert.deepEqual(
+    await emailService(store, {
+      SMTP_HOST: "127.0.0.1",
+      SMTP_PORT: smtp.address().port,
+      SMTP_FROM: "test@example.com",
+    }).verify(),
+    { verified: true },
+  );
   const first = await sendReminders("Test");
   assert.equal(first.sent, 4);
   assert.equal(first.failed, 0);

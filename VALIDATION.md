@@ -12,6 +12,6 @@
 - The user's existing record, renewal, document and five original audit blocks are retained. Development tests use separate randomly named databases.
 - Production dependencies report zero npm audit vulnerabilities after the Nodemailer update. Tailwind 3's build-only dependency tree still has upstream audit findings; user-supplied PDFs never reach those build tools.
 
-The Vercel entry point, Node runtime, static output and daily cron configuration are included. Actual Vercel hosting and production scheduler execution have not been performed; use VERCEL_DEPLOY.md for required Atlas connections and private environment variables. Backups are encrypted application snapshots, not a substitute for independent cluster backups or exported disaster recovery archives.
+The Vercel entry point, Node runtime, static output and daily cron configuration are included. Vercel production hosting and Atlas migration are verified at https://trustchain-reminder.vercel.app. Live health returns 200 with five audit blocks; protected APIs reject unauthenticated requests. Both authenticated cron endpoints ran successfully, including an encrypted cloud backup. Actual scheduled future invocation is pending its scheduled time; use VERCEL_DEPLOY.md for configuration details. Backups are encrypted application snapshots, not a substitute for independent cluster backups or exported disaster recovery archives.
 
 - A replica-set integration test verifies atomic encrypted cloud bootstrap import, ciphertext corruption rejection, initial sign-in, and refusal to replace an existing account.
