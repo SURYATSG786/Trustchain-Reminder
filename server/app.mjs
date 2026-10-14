@@ -17,7 +17,7 @@ import {
 import { credential } from "./auth.mjs";
 import { analyzePdf, inspectPdf } from "./pdf.mjs";
 import { verifyNptel } from "./nptel.mjs";
-import { createBackup, backupArchive } from "./backups.mjs";
+import { createBackup, backupArchive, decodeArchive } from "./backups.mjs";
 import { installAuth } from "./auth.mjs";
 import { emailService } from "./email.mjs";
 import { makeClaim, report } from "./provenance.mjs";
@@ -83,6 +83,31 @@ export function createApp(
         .json(jobs);
     },
   );
+  app.post("/api/deployment/import", async (req, res) => {
+    if (
+      env.ALLOW_SETUP !== "false" ||
+      !env.CRON_SECRET ||
+      !req.headers.authorization ||
+      hash(req.headers.authorization) !== hash(`Bearer ${env.CRON_SECRET}`)
+    )
+      return res
+        .status(403)
+        .json({
+          error: "Migration is disabled or scheduler credentials are invalid",
+        });
+    if (await store.getAdmin())
+      return res
+        .status(409)
+        .json({ error: "A configured workspace cannot be replaced" });
+    const decoded = decodeArchive(req.body, env);
+    await store.importInitial(decoded);
+    res.json({
+      ok: true,
+      records: decoded.workspace.state.records.length,
+      documents: decoded.documents.length,
+      blocks: decoded.workspace.state.chain.length,
+    });
+  });
   const { ready } = installAuth(app, store, env);
   app.use("/api", async (req, res, next) => {
     if (
@@ -90,11 +115,9 @@ export function createApp(
       (req.path.startsWith("/administrators") || req.path === "/settings/email")
     ) {
       if (!audit((await store.read()).chain).valid)
-        return res
-          .status(409)
-          .json({
-            error: "Audit chain integrity failure. Writes are blocked.",
-          });
+        return res.status(409).json({
+          error: "Audit chain integrity failure. Writes are blocked.",
+        });
     }
     next();
   });

@@ -489,3 +489,100 @@ test("NPTEL registration gate rejects confirmed forgery before storing bytes or 
   assert.equal((await store.read()).chain.length, 0);
   assert.equal((await store.read()).claims.length, 0);
 });
+
+test(
+  "Cloud bootstrap migration imports an encrypted workspace atomically and refuses replacement",
+  { skip: !process.env.TEST_TRANSACTION_URI },
+  async (t) => {
+    const { credential } = await import("../server/auth.mjs");
+    const { appendBlock } = await import("../server/domain.mjs");
+    const { makeClaim } = await import("../server/provenance.mjs");
+    const { hash } = await import("../server/domain.mjs");
+    const uri = process.env.TEST_TRANSACTION_URI,
+      id = randomUUID().replaceAll("-", ""),
+      source = "trustchain_import_source_" + id,
+      target = "trustchain_import_target_" + id,
+      client = new MongoClient(uri);
+    await client.connect();
+    const store = await createStore({ uri, database: source }),
+      destination = await createStore({ uri, database: target });
+    t.after(async () => {
+      await store.close();
+      await destination.close();
+      await client.db(source).dropDatabase();
+      await client.db(target).dropDatabase();
+      await client.close();
+    });
+    const env = {
+      APP_ENCRYPTION_KEY: "a".repeat(64),
+      BACKUP_ENCRYPTION_KEY: "b".repeat(64),
+      CRON_SECRET: "migration-test-secret",
+      ALLOW_SETUP: "false",
+    };
+    await store.createAdmin(
+      credential("migration@example.com", "migration-password-123"),
+    );
+    const state = await store.read();
+    const bytes = pdf();
+    await store.putFile("evidence", {
+      name: "evidence.pdf",
+      hash: hash(bytes),
+      data: bytes,
+    });
+    const claim = makeClaim({
+      name: "evidence.pdf",
+      issuer: "Issuer",
+      actor: "migration@example.com",
+      fileHash: hash(bytes),
+      documentId: "evidence",
+      size: bytes.length,
+    });
+    const block = appendBlock(
+      state,
+      "Document registered",
+      null,
+      { claim },
+      "migration@example.com",
+    );
+    state.claims.push({ ...claim, block_index: block.index });
+    state.revision++;
+    await store.save(state, 0);
+    const b = await createBackup(store, env);
+    const archive = await backupArchive(store, b._id);
+    const runtime = createApp(destination, env);
+    await runtime.ready;
+    const server = runtime.app.listen(0, "127.0.0.1");
+    await new Promise((r) => server.once("listening", r));
+    t.after(() => new Promise((r) => server.close(r)));
+    const base = `http://127.0.0.1:${server.address().port}/api`;
+    const send = async (body, authorized = true) =>
+      fetch(base + "/deployment/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authorized ? { Authorization: `Bearer ${env.CRON_SECRET}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    assert.equal((await send(archive, false)).status, 403);
+    const corrupted = structuredClone(archive);
+    corrupted.parts[0].tag = Buffer.alloc(16).toString("base64");
+    assert.equal((await send(corrupted)).status, 400);
+    assert.equal(await destination.getAdmin(), null);
+    const response = await send(archive);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).documents, 1);
+    assert.equal((await destination.getAdmin()).email, "migration@example.com");
+    assert.deepEqual((await destination.getFile("evidence")).data, bytes);
+    assert.equal((await send(archive)).status, 409);
+    const login = await fetch(base + "/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "migration@example.com",
+        password: "migration-password-123",
+      }),
+    });
+    assert.equal(login.status, 200);
+  },
+);

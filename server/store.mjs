@@ -188,6 +188,51 @@ export async function createStore({
         { _id: "email", ...config },
         { upsert: true },
       ),
+    importInitial: async ({ workspace, documents }) => {
+      const session = client.startSession();
+      try {
+        await session.withTransaction(async () => {
+          if (await admins.findOne({}, { session }))
+            throw Object.assign(
+              Error("A configured workspace cannot be replaced"),
+              { status: 409 },
+            );
+          const current = await states.findOne({ _id: "main" }, { session });
+          if (
+            current.records.length ||
+            current.chain.length ||
+            (await files.countDocuments({}, { session }))
+          )
+            throw Object.assign(
+              Error("Migration requires an empty workspace"),
+              { status: 409 },
+            );
+          await admins.insertMany(workspace.accounts, { session });
+          await states.replaceOne(
+            { _id: "main" },
+            { _id: "main", ...workspace.state },
+            { session },
+          );
+          if (documents.length)
+            await files.insertMany(
+              documents.map((d) => ({
+                _id: d.id,
+                name: d.name,
+                hash: d.hash,
+                data: Buffer.from(d.data, "base64"),
+              })),
+              { session },
+            );
+          if (workspace.settings)
+            await settings.replaceOne({ _id: "email" }, workspace.settings, {
+              upsert: true,
+              session,
+            });
+        });
+      } finally {
+        await session.endSession();
+      }
+    },
     backupIsIndependent: !!backupClient,
     close: async () => {
       await backupClient?.close();

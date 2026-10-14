@@ -1,7 +1,7 @@
 # Validation — 14 October 2026
 
 - Frontend builds with React and Tailwind CSS; the Node/Express application uses MongoDB for persistent data.
-- 16 automated tests pass with real MongoDB integration enabled; none skipped.
+- 17 automated tests pass with real MongoDB integration enabled; none skipped.
 - Tests cover first-run setup, correct/incorrect login, protected APIs, multipart registration, file hashing, duplicate rejection, renewal history, restart persistence, concurrent writes and tamper rejection.
 - Real PDF parsing/rendering and metadata extraction pass. NPTEL tests reject mismatched fields, hostile domains, missing evidence and unavailable servers.
 - Live official NPTEL verification of the supplied Blockchain certificate returned GENUINE with matching bytes, rendered page and fields. The official redirect to NPTEL-signed Google Storage is supported.
@@ -13,3 +13,5 @@
 - Production dependencies report zero npm audit vulnerabilities after the Nodemailer update. Tailwind 3's build-only dependency tree still has upstream audit findings; user-supplied PDFs never reach those build tools.
 
 The Vercel entry point, Node runtime, static output and daily cron configuration are included. Actual Vercel hosting and production scheduler execution have not been performed; use VERCEL_DEPLOY.md for required Atlas connections and private environment variables. Backups are encrypted application snapshots, not a substitute for independent cluster backups or exported disaster recovery archives.
+
+- A replica-set integration test verifies atomic encrypted cloud bootstrap import, ciphertext corruption rejection, initial sign-in, and refusal to replace an existing account.

@@ -138,3 +138,56 @@ export async function backupArchive(store, id) {
     parts: parts.map(({ iv, tag, data, index }) => ({ iv, tag, data, index })),
   };
 }
+
+export function decodeArchive(archive, env) {
+  if (
+    archive?.format !== "TrustChain encrypted backup" ||
+    archive.schema !== 1 ||
+    !Array.isArray(archive.parts) ||
+    archive.parts.length !== archive.manifest?.parts
+  )
+    throw Error("Invalid backup archive");
+  let workspace;
+  const documents = [];
+  for (let i = 0; i < archive.parts.length; i++) {
+    const part = archive.parts[i],
+      value = decryptPart(part, env);
+    if (
+      part.index !== i ||
+      value.partIndex !== i ||
+      value.backupId !== archive.manifest._id
+    )
+      throw Error("Backup part binding is invalid");
+    if (value.type === "workspace") {
+      if (workspace) throw Error("Duplicate workspace part");
+      workspace = value;
+    } else if (value.type === "document") documents.push(value);
+    else throw Error("Unknown backup part");
+  }
+  if (
+    !workspace ||
+    !Array.isArray(workspace.accounts) ||
+    !Array.isArray(workspace.state?.chain) ||
+    !audit(workspace.state.chain).valid ||
+    !workspace.accounts.some(
+      (a) => a._id === "owner" && (a.role || "owner") === "owner",
+    )
+  )
+    throw Error("Invalid backup workspace or owner");
+  const refs = new Map(
+    workspace.state.chain
+      .map((b) => b.event.detail?.claim)
+      .filter(Boolean)
+      .map((c) => [c.metadata.document_id, c.file_hash]),
+  );
+  for (const d of documents) {
+    if (
+      !refs.has(d.id) ||
+      hash(Buffer.from(d.data, "base64")) !== refs.get(d.id)
+    )
+      throw Error("Backup document integrity failed");
+    refs.delete(d.id);
+  }
+  if (refs.size) throw Error("Missing backup documents");
+  return { workspace, documents };
+}

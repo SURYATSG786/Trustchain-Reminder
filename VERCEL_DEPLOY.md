@@ -63,3 +63,13 @@ Supply the original `BACKUP_ENCRYPTION_KEY`. Restore verifies authenticated encr
 The local build and integration tests pass, including owner/admin restrictions, password/session revocation, independent backup storage and actual CLI recovery into a new MongoDB database. Live NPTEL verification succeeded for the supplied Blockchain certificate. The Vercel adapter is tested locally; an actual Vercel deployment, Atlas connectivity, scheduled execution and inbox delivery from Vercel still require verification in your deployed account.
 
 Official platform references: [Express on Vercel](https://vercel.com/docs/frameworks/backend/express), [Cron usage limits](https://vercel.com/docs/cron-jobs/usage-and-pricing), [Managing cron jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs).
+
+## Migrate without exposing an Atlas connection string
+
+For a new, empty Atlas workspace, retain the existing encryption keys, set `ALLOW_SETUP=false`, and deploy. Run the local helper with the private cron secret loaded from your local `.env`:
+
+```sh
+node --env-file-if-exists=.env scripts/deploy-import.mjs https://YOUR-DEPLOYMENT.vercel.app ../TrustChain_Recovery_2026-10-14.ndjson
+```
+
+This sends the encrypted archive over HTTPS to `/api/deployment/import`. The endpoint requires the cron secret and an empty workspace, authenticates every backup part and checks chain/file integrity, then imports using a MongoDB transaction. Once an owner exists, further import attempts are refused. No login sessions are migrated. The existing owner signs in using their previous password. This web import supports archives below the 3 MB API limit; larger migrations use the CLI restore workflow.
