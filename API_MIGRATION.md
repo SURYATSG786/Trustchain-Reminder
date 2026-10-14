@@ -1,23 +1,25 @@
-# API migration from the supplied Python project
+# Original API migration
 
-The original archive is preserved separately and is not modified. The running project uses the required Node/Express stack.
+The supplied Python implementation is preserved outside this repository. All running APIs are implemented in Express/Node.js and called by the React frontend.
 
-Implemented in Node and used by React:
+| Original path | Node implementation |
+|---|---|
+| `POST /api/v1/claims/upload` | Multipart registration, SHA-256, claim identity, Proof of Work, stored bytes |
+| `GET /api/v1/claims/:hash/verify` | Chain-anchored document integrity and provenance |
+| `GET /api/v1/claims/:index/report` | Provenance report |
+| `GET /api/v1/chain` | Chain list |
+| `GET /api/v1/chain/audit` | Chain validation |
+| `GET /api/v1/chain/block/:index` | Block provenance |
+| `GET /api/v1/health` | API and MongoDB health |
+| `POST /api/v1/verify/nptel-certificate` | Actual PDF QR decoding, official record retrieval, field and rendered-page comparison |
+| `POST /api/v1/forensics/analyze` | PDF metadata/text parsing, page count, timestamps, embedded JavaScript/attachments and incremental-revision indicators |
 
-- Actual file upload and storage, SHA-256 fingerprint and duplicate registration handling.
-- TrustClaim fields: type, asset name, issuer, registered-by account, file hash, submission time, claim hash and metadata.
-- Claim identity fingerprint and Proof of Work mining.
-- Provenance report and the original five scoring weights.
-- Registered file hash verification, with an additional MongoDB stored-byte integrity check.
-- Chain list, block report, audit and health endpoints under the original `/api/v1` paths.
-- New renewal APIs, original and updated expiry history, document associations, compliance reports and Nodemailer reminder delivery.
+Inspection accepts multipart `file` uploads or JSON `{ "documentId": "..." }` for registered documents. PDF uploads are limited to 2 MB. NPTEL certificates must be one page; forensic inspection supports up to 10 pages. The inspection operations do not register files or change claims. Registration also reads a single-page PDF QR: NPTEL-linked or NPTEL-labelled documents are checked before mining. A confirmed FAKE verdict prevents registration; GENUINE/UNVERIFIABLE status and reason are anchored in the claim metadata.
 
-Interface differences:
+NPTEL returns `GENUINE` only when the uploaded file matches the official bytes, or all fields and rendered pages match with essential fields extracted. Altered extracted fields or an unofficial QR URL return `FAKE`; unreadable QR codes, unavailable servers, unsupported layouts, and visual differences without a provable field mismatch return `UNVERIFIABLE`. A converted or compressed genuine certificate may be unverifiable: use the original PDF. Network failures never become a forged-certificate verdict.
 
-- Original endpoints now require sign-in, except health; the Python app did not enforce administrator sign-in.
-- Upload accepts original multipart field names; `record_id` optionally links a PDF to a renewal record.
-- `submitted_by` comes from the authenticated account instead of trusting a user-provided name.
-- Upload returns HTTP 201 and includes the persisted document ID.
-- The ledger is a new MongoDB chain with renewal/audit events; original Python ledger JSON is not silently imported or rehashed.
-- Scores indicate integrity signals. No hardcoded issuer is presented as externally verified.
-- Specialized `/api/v1/verify/nptel-certificate` and `/api/v1/forensics` operations remain outside this migration. No fake or placeholder certificate-authenticity verdicts are produced.
+Requests are restricted to NPTEL HTTPS hosts, with DNS address validation, pinned public destinations, request size/time/redirect bounds. Official redirects to NPTEL-signed Google Storage certificate downloads are supported; arbitrary uploaded Google Storage URLs are not trusted. The live supplied NPTEL Blockchain certificate matched the official PDF during validation.
+
+PDF forensic indicators are observations, not proof of forgery or a malware verdict. Missing author/creator metadata is common in valid documents. This implementation does not perform OCR, certificate digital-signature validation or arbitrary issuer verification.
+
+All APIs except health and secret-authenticated cron require sign-in. The authenticated account supplies claim identity. The MongoDB audit ledger is not a byte-compatible import of the original Python ledger; the original five provenance scoring weights are retained. Standalone integrity scores remain separate from NPTEL issuer verification.

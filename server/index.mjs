@@ -1,3 +1,4 @@
+import { createBackup } from "./backups.mjs";
 import { createStore } from "./store.mjs";
 import { createApp } from "./app.mjs";
 import { randomBytes } from "node:crypto";
@@ -44,9 +45,20 @@ const tick = async () => {
 const timer = setInterval(tick, 60 * 60 * 1000);
 timer.unref();
 setTimeout(tick, 5000).unref();
+const backupTick = async () => {
+  if (process.env.BACKUP_ENCRYPTION_KEY)
+    try {
+      await createBackup(store, process.env);
+    } catch (e) {
+      console.error("Backup:", e.message);
+    }
+};
+const backupTimer = setInterval(backupTick, 86400000);
+backupTimer.unref();
 const shutdown = () =>
   server.close(async () => {
     clearInterval(timer);
+    clearInterval(backupTimer);
     await store.close();
     process.exit(0);
   });

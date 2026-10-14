@@ -1,11 +1,24 @@
+import { randomUUID } from "node:crypto";
 import { MongoClient, BSON } from "mongodb";
-export async function createStore({ uri, database = "trustchain" } = {}) {
+export async function createStore({
+  uri,
+  database = "trustchain",
+  backupUri = process.env.BACKUP_MONGODB_URI,
+  backupDatabase = process.env.BACKUP_MONGODB_DATABASE || "trustchain_backups",
+} = {}) {
   if (!uri)
     throw Error(
       "MONGODB_URI is required. TrustChain uses MongoDB for all application data.",
     );
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
+  const backupClient = backupUri
+    ? new MongoClient(backupUri, { serverSelectionTimeoutMS: 5000 })
+    : null;
+  if (backupClient) await backupClient.connect();
+  const backupDb = backupClient
+    ? backupClient.db(backupDatabase)
+    : client.db(database);
   const db = client.db(database),
     states = db.collection("workspace"),
     files = db.collection("documents"),
@@ -25,6 +38,20 @@ export async function createStore({ uri, database = "trustchain" } = {}) {
     },
     { upsert: true },
   );
+  await admins.updateMany(
+    { role: { $exists: false } },
+    { $set: { role: "owner", active: true } },
+  );
+  await admins.createIndex({ email: 1 }, { unique: true });
+  const locks = db.collection("locks"),
+    deliveries = db.collection("deliveries"),
+    backups = backupDb.collection("backups"),
+    parts = backupDb.collection("backup_parts"),
+    limits = db.collection("login_limits");
+  await locks.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await limits.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await backups.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await parts.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   await sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   return {
     read: async () => {
@@ -51,10 +78,100 @@ export async function createStore({ uri, database = "trustchain" } = {}) {
       return f && { ...f, data: Buffer.from(f.data.buffer) };
     },
     deleteFile: async (id) => files.deleteOne({ _id: id }),
+    findAdmin: (email) => admins.findOne({ email }),
+    listAdmins: () =>
+      admins.find({}, { projection: { passwordHash: 0, salt: 0 } }).toArray(),
+    addAdmin: async (a) => {
+      try {
+        await admins.insertOne({
+          _id: randomUUID(),
+          ...a,
+          role: "admin",
+          active: true,
+        });
+        return true;
+      } catch (e) {
+        if (e.code === 11000) return false;
+        throw e;
+      }
+    },
+    setAdminActive: (email, active) =>
+      admins.updateOne({ email, role: "admin" }, { $set: { active } }),
+    changePassword: (email, a) =>
+      admins.updateOne(
+        { email },
+        { $set: { salt: a.salt, passwordHash: a.passwordHash } },
+      ),
+    revokeSessions: (email) => sessions.deleteMany({ email }),
+    loginAttempt: async (key) => {
+      const window = Math.floor(Date.now() / 900000);
+      const row = await limits.findOneAndUpdate(
+        { _id: `${key}:${window}` },
+        {
+          $inc: { count: 1 },
+          $setOnInsert: { expiresAt: new Date((window + 2) * 900000) },
+        },
+        { upsert: true, returnDocument: "after" },
+      );
+      return row.count;
+    },
+    acquireLock: async (key, duration = 300000) => {
+      const token = randomUUID();
+      try {
+        const r = await locks.findOneAndUpdate(
+          { _id: key, expiresAt: { $lt: new Date() } },
+          { $set: { token, expiresAt: new Date(Date.now() + duration) } },
+          { upsert: true, returnDocument: "after" },
+        );
+        return r.token;
+      } catch (e) {
+        if (e.code === 11000) return null;
+        throw e;
+      }
+    },
+    releaseLock: (key, token) => locks.deleteOne({ _id: key, token }),
+    reserveDelivery: async (key) => {
+      try {
+        await deliveries.insertOne({
+          _id: key,
+          status: "Sending",
+          at: new Date(),
+        });
+        return true;
+      } catch (e) {
+        if (e.code === 11000) return false;
+        throw e;
+      }
+    },
+    finishDelivery: (key, status) =>
+      deliveries.updateOne(
+        { _id: key },
+        { $set: { status, finishedAt: new Date() } },
+      ),
+    releaseFailedDelivery: (key) =>
+      deliveries.deleteOne({ _id: key, status: "Failed" }),
+    exportAccounts: () => admins.find().toArray(),
+    allFiles: () => files.find(),
+    saveBackupPart: (part) => parts.insertOne(part),
+    finishBackup: (b) => backups.insertOne(b),
+    listBackups: () =>
+      backups
+        .find({}, { projection: { parts: 0 } })
+        .sort({ createdAt: -1 })
+        .limit(30)
+        .toArray(),
+    getBackup: (id) => backups.findOne({ _id: id }),
+    getBackupParts: (id) =>
+      parts.find({ backupId: id }).sort({ index: 1 }).toArray(),
     getAdmin: () => admins.findOne({ _id: "owner" }),
     createAdmin: async (admin) => {
       try {
-        await admins.insertOne({ _id: "owner", ...admin });
+        await admins.insertOne({
+          _id: "owner",
+          ...admin,
+          role: "owner",
+          active: true,
+        });
         return true;
       } catch (e) {
         if (e.code === 11000) return false;
@@ -71,6 +188,10 @@ export async function createStore({ uri, database = "trustchain" } = {}) {
         { _id: "email", ...config },
         { upsert: true },
       ),
-    close: () => client.close(),
+    backupIsIndependent: !!backupClient,
+    close: async () => {
+      await backupClient?.close();
+      await client.close();
+    },
   };
 }

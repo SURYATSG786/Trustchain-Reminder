@@ -8,7 +8,7 @@ The current workspace is configured at **http://localhost:4317** with a real loc
 
 ## Install / run elsewhere
 
-Requires Node.js 22.9+ and MongoDB Community Server or Atlas.
+Requires Node.js 22.13+ and MongoDB Community Server or Atlas.
 
 ```sh
 npm ci
@@ -60,7 +60,7 @@ Your supplied project implements FastAPI/Python, which conflicts with your expli
 
 The original scoring dimensions (35/25/20/15/5) and claim identity are retained as Node implementations. Scores refer to integrity signals. An issuer name or high score does not prove certificate authenticity. Proof of Work and renewal audit events share the new MongoDB-backed chain; this is not a byte-compatible import of the previous Python ledger.
 
-The specialized **NPTEL QR/official-certificate comparison** and **PDF forensic analysis** Python endpoints are not ported or called. The UI does not label certificates genuine/fake, perform OCR or claim forensic inspection. These operations are distinct from renewal management and require a separate Node implementation to remain within your stack. See `API_MIGRATION.md` for exact scope.
+The **Certificate inspection** screen implements NPTEL QR/official-record verification and PDF metadata/structural analysis in Node.js. Upload the original certificate or select a registered PDF. NPTEL checks compare actual official bytes, fields and rendered pages; unavailable or inconclusive evidence remains UNVERIFIABLE. Forensic metadata indicators do not prove forgery. See `API_MIGRATION.md` for contracts and limits.
 
 ## Additional working APIs
 
@@ -94,8 +94,16 @@ The MongoDB tests create and drop their own randomly named test databases. They 
 
 ## Technical scope
 
-This is a single-organization, single-administrator application. Records and audit events share one MongoDB workspace document for atomic revision-checked updates; document bytes, sessions, account and encrypted SMTP settings use separate MongoDB collections. The workspace history is bounded to 14 MB before MongoDB's 16 MB document limit. Files are limited to 2 MB each and supporting PDFs to 30 per record. Run one application instance; scheduling coordination and login rate limits are process-local. Renewal dates and email deduplication use UTC dates.
+This is a single-organization application with an owner and up to 19 additional administrators. The owner creates/disables administrators and controls SMTP configuration and encrypted backups. Disabled accounts lose access immediately; each administrator can change their own password. Records and audit events share one MongoDB workspace document for atomic revision-checked updates; document bytes, sessions, account and encrypted SMTP settings use separate MongoDB collections. The workspace history is bounded to 14 MB before MongoDB's 16 MB document limit. Files are limited to 2 MB each and supporting PDFs to 30 per record. MongoDB locks coordinate reminder scans and snapshots across instances; delivery reservations prevent simultaneous duplicate sends and MongoDB counters enforce login throttling. Renewal dates and email deduplication use UTC dates.
 
 The audit chain is tamper-evident under the application's checks, with three leading hexadecimal zeroes required for Proof of Work. It is not a distributed blockchain or externally anchored ledger; a privileged database operator could re-mine a replacement. Restrict database access and keep independent backups/audit exports.
 
-The server currently binds to loopback. Public deployment has not been performed. Public hosting requires HTTPS, `NODE_ENV=production` for secure cookies, authenticated MongoDB access and backups. Development tooling uses esbuild for JSX bundling and Tailwind CLI for styles; the runtime has no additional frontend or backend framework.
+Local development binds to loopback. The Vercel entry point exports Express without a permanent listener or background timers. Public deployment has not been performed. See `VERCEL_DEPLOY.md` for Atlas, encryption keys, authenticated daily cron, independent backup storage and disaster recovery. Development tooling uses esbuild for JSX bundling and Tailwind CLI for styles; the runtime has no additional frontend or backend framework.
+
+## Administrators and recovery
+
+Sign in as owner to use **Administrators** and **Backups**. Added administrators can manage records, upload documents and inspect certificates. They cannot administer users, save SMTP settings or access backups. All accounts have **Account settings** for password changes; changing a password revokes existing sessions.
+
+Backups contain workspace data, chain, original document bytes, account hashes and encrypted SMTP settings. Configure `BACKUP_ENCRYPTION_KEY`; optionally set `BACKUP_MONGODB_URI` to an independent destination. The local server snapshots daily while running. Vercel uses protected cron requests. Recovery points expire after seven days. Download independent copies from Backups, or use `npm run backup:export`. `npm run backup:restore` verifies the archive and writes only to a new empty database. Keep both encryption keys outside the server and repository.
+
+New routes: `GET/POST /api/administrators`, `PUT /api/administrators/status`, `POST /api/account/password`, `GET/POST /api/backups`, `GET /api/backups/:id/download`, `POST /api/v1/verify/nptel-certificate`, `POST /api/v1/forensics/analyze`, and secret-authenticated `GET /api/cron/reminders` / `/api/cron/backups`.

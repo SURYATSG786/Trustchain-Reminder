@@ -1,0 +1,35 @@
+{
+  "buildCommand": "npm run build",
+  "framework": "express",
+  "functions": {
+    "app.mjs": {
+      "maxDuration": 300,
+      "includeFiles": "{public/**,node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs}"
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/backups",
+      "schedule": "30 3 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "same-origin"
+        }
+      ]
+    }
+  ]
+}

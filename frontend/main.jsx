@@ -208,6 +208,14 @@ function App() {
     ["Reports", "chart"],
     ["Document verification", "shield"],
     ["Email settings", "bell"],
+    ["Certificate inspection", "shield"],
+    ...(session?.role === "owner"
+      ? [
+          ["Administrators", "grid"],
+          ["Backups", "download"],
+        ]
+      : []),
+    ["Account settings", "shield"],
   ];
   if (!session || !session.authenticated)
     return (
@@ -1113,8 +1121,26 @@ function App() {
               </section>
             </>
           )}
+          {page === "Certificate inspection" && (
+            <CertificateInspection claims={data.claims || []} notify={notify} />
+          )}
+          {page === "Administrators" && <TeamSettings notify={notify} />}
+          {page === "Backups" && <BackupSettings notify={notify} />}
+          {page === "Account settings" && (
+            <AccountSettings
+              notify={notify}
+              onPasswordChanged={async () => {
+                setSession(await api("/session"));
+                setData(null);
+              }}
+            />
+          )}
           {page === "Email settings" && (
-            <EmailSettings onSaved={load} notify={notify} />
+            <EmailSettings
+              onSaved={load}
+              notify={notify}
+              readOnly={session.role !== "owner"}
+            />
           )}
           {page === "Document verification" && (
             <DocumentVerification
@@ -1656,7 +1682,13 @@ function App() {
 function Logo() {
   return (
     <div className="logo">
-      <img className="brand-mark" src="/trustchain-logo.png" alt="" width="48" height="48" />
+      <img
+        className="brand-mark"
+        src="/trustchain-logo.png"
+        alt=""
+        width="48"
+        height="48"
+      />
       TrustChain<span className="logo-dot">.</span>
     </div>
   );
@@ -1702,7 +1734,7 @@ function Field({ label, wide, children }) {
 }
 createRoot(document.getElementById("root")).render(<App />);
 
-function EmailSettings({ onSaved, notify }) {
+function EmailSettings({ onSaved, notify, readOnly }) {
   const [settings, setSettings] = useState(null),
     [saving, setSaving] = useState(false),
     [error, setError] = useState("");
@@ -1720,120 +1752,128 @@ function EmailSettings({ onSaved, notify }) {
     <section className="panel max-w-3xl">
       <div className="panel-heading">
         <div>
-          <h3>Connect your email server</h3>
+          <h3>
+            {readOnly
+              ? "Email configuration (owner managed)"
+              : "Connect your email server"}
+          </h3>
           <p>Credentials are encrypted before being stored in MongoDB.</p>
         </div>
       </div>
-      <form
-        className="px-5 pb-6"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setSaving(true);
-          setError("");
-          try {
-            const c = await api("/settings/email", {
-              method: "PUT",
-              body: JSON.stringify(settings),
-            });
-            setSettings({ ...c, password: "" });
-            await onSaved();
-            notify("SMTP connection verified. Email settings saved.");
-          } catch (e) {
-            setError(e.message);
-          } finally {
-            setSaving(false);
-          }
-        }}
-      >
-        <div className="form-grid">
-          <Field label="SMTP host">
+      <fieldset disabled={readOnly}>
+        <form
+          className="px-5 pb-6"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setSaving(true);
+            setError("");
+            try {
+              const c = await api("/settings/email", {
+                method: "PUT",
+                body: JSON.stringify(settings),
+              });
+              setSettings({ ...c, password: "" });
+              await onSaved();
+              notify("SMTP connection verified. Email settings saved.");
+            } catch (e) {
+              setError(e.message);
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          <div className="form-grid">
+            <Field label="SMTP host">
+              <input
+                required
+                value={settings.host}
+                onChange={(e) => change("host", e.target.value)}
+                placeholder="smtp.your-provider.com"
+              />
+            </Field>
+            <Field label="SMTP port">
+              <input
+                type="number"
+                min="1"
+                max="65535"
+                required
+                value={settings.port}
+                onChange={(e) => change("port", Number(e.target.value))}
+              />
+            </Field>
+            <Field label="SMTP username">
+              <input
+                value={settings.username}
+                onChange={(e) => change("username", e.target.value)}
+                autoComplete="off"
+              />
+            </Field>
+            <Field label="SMTP password / app password">
+              <input
+                type="password"
+                value={settings.password}
+                onChange={(e) => change("password", e.target.value)}
+                autoComplete="new-password"
+                placeholder={
+                  settings.hasPassword
+                    ? "Saved securely · Leave blank to keep"
+                    : "Enter your provider’s SMTP password"
+                }
+              />
+            </Field>
+            <Field label="Sender email address" wide>
+              <input
+                type="email"
+                required
+                value={settings.from}
+                onChange={(e) => change("from", e.target.value)}
+              />
+            </Field>
+          </div>
+          <label className="flex items-center gap-3 mt-5">
             <input
-              required
-              value={settings.host}
-              onChange={(e) => change("host", e.target.value)}
-              placeholder="smtp.your-provider.com"
+              className="w-4 h-4 m-0"
+              type="checkbox"
+              checked={settings.secure}
+              onChange={(e) => change("secure", e.target.checked)}
             />
-          </Field>
-          <Field label="SMTP port">
+            Use SSL/TLS from connection start (usually port 465)
+          </label>
+          <label className="flex items-center gap-3 mt-4">
             <input
-              type="number"
-              min="1"
-              max="65535"
-              required
-              value={settings.port}
-              onChange={(e) => change("port", Number(e.target.value))}
+              className="w-4 h-4 m-0"
+              type="checkbox"
+              checked={settings.enabled}
+              onChange={(e) => change("enabled", e.target.checked)}
             />
-          </Field>
-          <Field label="SMTP username">
-            <input
-              value={settings.username}
-              onChange={(e) => change("username", e.target.value)}
-              autoComplete="off"
-            />
-          </Field>
-          <Field label="SMTP password / app password">
-            <input
-              type="password"
-              value={settings.password}
-              onChange={(e) => change("password", e.target.value)}
-              autoComplete="new-password"
-              placeholder={
-                settings.hasPassword
-                  ? "Saved securely · Leave blank to keep"
-                  : "Enter your provider’s SMTP password"
-              }
-            />
-          </Field>
-          <Field label="Sender email address" wide>
-            <input
-              type="email"
-              required
-              value={settings.from}
-              onChange={(e) => change("from", e.target.value)}
-            />
-          </Field>
-        </div>
-        <label className="flex items-center gap-3 mt-5">
-          <input
-            className="w-4 h-4 m-0"
-            type="checkbox"
-            checked={settings.secure}
-            onChange={(e) => change("secure", e.target.checked)}
-          />
-          Use SSL/TLS from connection start (usually port 465)
-        </label>
-        <label className="flex items-center gap-3 mt-4">
-          <input
-            className="w-4 h-4 m-0"
-            type="checkbox"
-            checked={settings.enabled}
-            onChange={(e) => change("enabled", e.target.checked)}
-          />
-          Enable automatic renewal reminder emails
-        </label>
-        <p className="muted text-xs mt-4 leading-relaxed">
-          Port 587 uses STARTTLS. Saving tests the SMTP connection and login
-          without sending an email. When delivery is enabled, due records are
-          checked hourly and emailed to their responsible owner.
-        </p>
-        {settings.verifiedAt && (
-          <p className="text-leaf text-xs mt-4">
-            Last verified:{" "}
-            {new Date(settings.verifiedAt).toLocaleString("en-IN")}
+            Enable automatic renewal reminder emails
+          </label>
+          <p className="muted text-xs mt-4 leading-relaxed">
+            Port 587 uses STARTTLS. Saving tests the SMTP connection and login
+            without sending an email. When delivery is enabled, due records are
+            checked hourly and emailed to their responsible owner.
           </p>
-        )}
-        {error && (
-          <p role="alert" className="error text-sm mt-4">
-            {error}
-          </p>
-        )}
-        <div className="modal-footer">
-          <button disabled={saving} className="btn primary">
-            {saving ? "Checking SMTP connection…" : "Save & verify connection"}
-            <Icon name="check" size={16} />
-          </button>
-        </div>
-      </form>
+          {settings.verifiedAt && (
+            <p className="text-leaf text-xs mt-4">
+              Last verified:{" "}
+              {new Date(settings.verifiedAt).toLocaleString("en-IN")}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="error text-sm mt-4">
+              {error}
+            </p>
+          )}
+          <div className="modal-footer">
+            <button disabled={saving} className="btn primary">
+              {saving
+                ? "Checking SMTP connection…"
+                : "Save & verify connection"}
+              <Icon name="check" size={16} />
+            </button>
+          </div>
+        </form>
+      </fieldset>
     </section>
   );
 }
@@ -2101,6 +2141,11 @@ function DocumentVerification({ records, claims, onChange, notify }) {
             </span>
             <div>
               <b>{c.asset_name}</b>
+              {c.metadata?.nptel_verification && (
+                <small>
+                  NPTEL issuer check: {c.metadata.nptel_verification.status}
+                </small>
+              )}
               <small className="muted text-xs mt-1">
                 {c.issuer} · Block {c.block_index}
               </small>
@@ -2133,5 +2178,446 @@ function DocumentVerification({ records, claims, onChange, notify }) {
         )}
       </section>
     </>
+  );
+}
+
+function CertificateInspection({ claims, notify }) {
+  const [file, setFile] = useState(null),
+    [documentId, setDocumentId] = useState(""),
+    [busy, setBusy] = useState(""),
+    [result, setResult] = useState(null),
+    [error, setError] = useState("");
+  async function inspect(kind) {
+    setBusy(kind);
+    setError("");
+    setResult(null);
+    try {
+      let body;
+      if (file) {
+        body = new FormData();
+        body.set("file", file);
+      } else if (documentId) body = JSON.stringify({ documentId });
+      else throw Error("Choose a PDF or a registered document");
+      const r = await api(
+        kind === "NPTEL"
+          ? "/v1/verify/nptel-certificate"
+          : "/v1/forensics/analyze",
+        { method: "POST", body },
+      );
+      setResult({ kind, ...r });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <>
+      <div className="notice">
+        <Icon name="shield" />
+        <div>
+          <b>Check the issuer. Inspect the evidence.</b>
+          <p>
+            NPTEL verification reads the QR, retrieves the official certificate,
+            and compares fields and rendered pages. PDF inspection reports
+            metadata and structural indicators.
+          </p>
+        </div>
+      </div>
+      <section className="panel p-6">
+        <h3>Choose a certificate</h3>
+        <div className="grid gap-4 mt-5 md:grid-cols-2">
+          <Field label="PDF to inspect (up to 2 MB)">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => {
+                setFile(e.target.files[0] || null);
+                setDocumentId("");
+              }}
+            />
+          </Field>
+          <Field label="Or select a registered PDF">
+            <select
+              value={documentId}
+              onChange={(e) => {
+                setDocumentId(e.target.value);
+                setFile(null);
+              }}
+            >
+              <option value="">Select document</option>
+              {claims
+                .filter((c) => /\.pdf$/i.test(c.asset_name))
+                .map((c) => (
+                  <option key={c.claim_id} value={c.metadata.document_id}>
+                    {c.asset_name} · {c.issuer}
+                  </option>
+                ))}
+            </select>
+          </Field>
+        </div>
+        <div className="flex flex-wrap gap-3 mt-5">
+          <button
+            className="btn primary"
+            disabled={!!busy}
+            onClick={() => inspect("NPTEL")}
+          >
+            {busy === "NPTEL"
+              ? "Checking official record…"
+              : "Verify with NPTEL"}
+          </button>
+          <button
+            className="btn secondary"
+            disabled={!!busy}
+            onClick={() => inspect("PDF")}
+          >
+            {busy === "PDF" ? "Inspecting PDF…" : "Analyze PDF"}
+          </button>
+        </div>
+        {error && (
+          <p className="error mt-4" role="alert">
+            {error}
+          </p>
+        )}
+      </section>
+      {result && (
+        <section className="panel p-6 mt-5" aria-live="polite">
+          <h3>
+            {result.kind === "NPTEL"
+              ? result.status
+              : `PDF indicators: ${result.risk_level}`}
+          </h3>
+          <p className="muted mt-3">{result.reason || result.scope}</p>
+          {result.kind === "NPTEL" ? (
+            <>
+              <div className="grid gap-4 mt-5 md:grid-cols-2">
+                {Object.entries(result.checks || {}).map(([k, v]) => (
+                  <div key={k}>
+                    <b>{k.replaceAll("_", " ")}</b>
+                    <p>{v ? "Matched" : "Did not match"}</p>
+                  </div>
+                ))}
+              </div>
+              {result.mismatches?.length > 0 && (
+                <ul className="list-disc pl-5 mt-4">
+                  {result.mismatches.map((m) => (
+                    <li key={m.field}>
+                      {m.field.replaceAll("_", " ")}: uploaded{" "}
+                      {m.uploaded || "missing"}; official{" "}
+                      {m.official || "missing"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {result.official_fields && (
+                <div className="grid gap-4 mt-5 md:grid-cols-2">
+                  {Object.entries(result.official_fields).map(([k, v]) => (
+                    <div key={k}>
+                      <small className="muted">{k.replaceAll("_", " ")}</small>
+                      <p>{v || "Unavailable"}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {result.qr_url && (
+                <p className="muted mt-4 break-all">
+                  Official QR: {result.qr_url}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="grid gap-4 mt-5 md:grid-cols-2">
+                {[
+                  "page_count",
+                  "file_size_bytes",
+                  "author",
+                  "creator",
+                  "producer",
+                  "creation_date",
+                  "modification_date",
+                  "sha256",
+                ].map((k) => (
+                  <div className="break-all" key={k}>
+                    <small className="muted">{k.replaceAll("_", " ")}</small>
+                    <p>{result[k] ?? "Unavailable"}</p>
+                  </div>
+                ))}
+              </div>
+              <ul className="list-disc pl-5 mt-4">
+                {result.tamper_indicators.map((i) => (
+                  <li key={i}>{i}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
+    </>
+  );
+}
+function TeamSettings({ notify }) {
+  const [users, setUsers] = useState([]),
+    [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [busy, setBusy] = useState(false);
+  const refresh = async () =>
+    setUsers((await api("/administrators")).administrators);
+  useEffect(() => {
+    refresh().catch((e) => notify(e.message));
+  }, []);
+  return (
+    <>
+      <section className="panel p-6">
+        <h3>Workspace administrators</h3>
+        <p className="muted mt-2">
+          Administrators manage records and inspect documents. The owner manages
+          administrator access, email configuration and backups.
+        </p>
+        <form
+          className="grid gap-4 mt-5"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            try {
+              await api("/administrators", {
+                method: "POST",
+                body: JSON.stringify({ email, password }),
+              });
+              setEmail("");
+              setPassword("");
+              await refresh();
+              notify(
+                "Administrator created. Share the temporary password privately; they can change it in Account settings.",
+              );
+            } catch (e) {
+              notify(e.message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Field label="Administrator email">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="off"
+            />
+          </Field>
+          <Field label="Initial password (at least 12 characters)">
+            <input
+              type="password"
+              required
+              minLength="12"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </Field>
+          <button className="btn primary justify-self-start" disabled={busy}>
+            {busy ? "Adding…" : "Add administrator"}
+          </button>
+        </form>
+      </section>
+      <section className="panel p-6 mt-5">
+        <h3>Current access</h3>
+        {users.map((u) => (
+          <div
+            className="flex items-center justify-between gap-4 py-4 border-b"
+            key={u.email}
+          >
+            <div>
+              <b>{u.email}</b>
+              <p className="muted">
+                {u.role} · {u.active === false ? "Disabled" : "Active"}
+              </p>
+            </div>
+            {u.role === "admin" && (
+              <button
+                className="btn secondary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await api("/administrators/status", {
+                      method: "PUT",
+                      body: JSON.stringify({
+                        email: u.email,
+                        active: u.active === false,
+                      }),
+                    });
+                    await refresh();
+                    notify("Administrator access updated.");
+                  } catch (e) {
+                    notify(e.message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {u.active === false ? "Enable" : "Disable"}
+              </button>
+            )}
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+function BackupSettings({ notify }) {
+  const [state, setState] = useState(null),
+    [busy, setBusy] = useState(false);
+  const refresh = async () => setState(await api("/backups"));
+  useEffect(() => {
+    refresh().catch((e) => notify(e.message));
+  }, []);
+  return (
+    <>
+      <div className="notice">
+        <Icon name="shield" />
+        <div>
+          <b>Encrypted recovery snapshots</b>
+          <p>
+            Daily scheduled backups retain seven days of workspace data,
+            accounts, SMTP configuration and documents. Download a copy and keep
+            both encryption keys separately for recovery.
+          </p>
+        </div>
+      </div>
+      <section className="panel p-6">
+        <h3>Backup status</h3>
+        <p className="muted mt-2">
+          {state?.configured
+            ? "Backup encryption is configured."
+            : "Set BACKUP_ENCRYPTION_KEY on the server to enable backups."}
+        </p>
+        <p className="muted mt-2">
+          {state?.independent
+            ? "Backups are stored in your separate MongoDB destination."
+            : "Snapshots share the application database. Configure a separate backup MongoDB destination or download copies for disaster recovery."}
+        </p>
+        <button
+          className="btn primary mt-5"
+          disabled={busy || !state?.configured}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await api("/backups", { method: "POST", body: "{}" });
+              await refresh();
+              notify("Encrypted backup completed.");
+            } catch (e) {
+              notify(e.message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Creating backup…" : "Create backup now"}
+        </button>
+      </section>
+      <section className="panel p-6 mt-5">
+        <h3>Recovery points</h3>
+        {state?.backups.map((b) => (
+          <div
+            className="flex flex-wrap items-center justify-between gap-4 py-4 border-b"
+            key={b._id}
+          >
+            <div>
+              <b>{new Date(b.createdAt).toLocaleString()}</b>
+              <p className="muted">
+                {b.records} records · {b.documents} documents · expires{" "}
+                {new Date(b.expiresAt).toLocaleDateString()}
+              </p>
+            </div>
+            {b.bytes <= 3500000 ? (
+              <button
+                className="btn secondary"
+                onClick={async () => {
+                  try {
+                    const data = await api(`/backups/${b._id}/download`);
+                    const url = URL.createObjectURL(
+                      new Blob([JSON.stringify(data)], {
+                        type: "application/json",
+                      }),
+                    );
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `trustchain-${b._id}.backup.json`;
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  } catch (e) {
+                    notify(e.message);
+                  }
+                }}
+              >
+                Download encrypted backup
+              </button>
+            ) : (
+              <span className="muted">Use backup export CLI: {b._id}</span>
+            )}
+          </div>
+        ))}
+        {state && !state.backups.length && (
+          <p className="muted mt-4">No recovery points yet.</p>
+        )}
+      </section>
+    </>
+  );
+}
+function AccountSettings({ notify, onPasswordChanged }) {
+  const [currentPassword, setCurrent] = useState(""),
+    [password, setPassword] = useState(""),
+    [busy, setBusy] = useState(false);
+  return (
+    <section className="panel p-6">
+      <h3>Change your password</h3>
+      <p className="muted mt-2">
+        Changing your password signs out all your sessions.
+      </p>
+      <form
+        className="grid gap-4 mt-5"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          try {
+            await api("/account/password", {
+              method: "POST",
+              body: JSON.stringify({ currentPassword, password }),
+            });
+            notify("Password changed. Sign in with your new password.");
+            await onPasswordChanged();
+          } catch (e) {
+            notify(e.message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <Field label="Current password">
+          <input
+            type="password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrent(e.target.value)}
+            autoComplete="current-password"
+          />
+        </Field>
+        <Field label="New password">
+          <input
+            type="password"
+            required
+            minLength="12"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+        </Field>
+        <button className="btn primary justify-self-start" disabled={busy}>
+          {busy ? "Saving…" : "Change password"}
+        </button>
+      </form>
+    </section>
   );
 }

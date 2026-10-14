@@ -46,9 +46,27 @@ export function installAuth(app, store, env) {
     )?.[1];
     if (!token) return null;
     const s = await store.getSession(tokenHash(token));
-    return s && new Date(s.expiresAt) > new Date() ? s : null;
+    if (!s || new Date(s.expiresAt) <= new Date()) return null;
+    const a = store.findAdmin
+      ? await store.findAdmin(s.email)
+      : await store.getAdmin();
+    return a && a.active !== false ? { ...s, role: a.role || "owner" } : null;
   }
-  function throttle(req, res, next) {
+  async function throttle(req, res, next) {
+    if (store.loginAttempt) {
+      const account = String(req.body?.email || "setup")
+        .trim()
+        .toLowerCase()
+        .slice(0, 180);
+      if (
+        (await store.loginAttempt(`ip:${req.ip}`)) > 120 ||
+        (await store.loginAttempt(`account:${req.ip}:${account}`)) > 12
+      )
+        return res
+          .status(429)
+          .json({ error: "Too many attempts. Try again in 15 minutes." });
+      return next();
+    }
     const k = req.ip,
       old = attempts.get(k),
       a =
@@ -85,6 +103,7 @@ export function installAuth(app, store, env) {
       authenticated: !!s,
       setupRequired: !admin,
       email: s?.email,
+      role: s?.role,
       organization: admin?.organization || "Your organization",
     });
   });
@@ -108,10 +127,17 @@ export function installAuth(app, store, env) {
   });
   app.post("/api/login", origin, throttle, async (req, res) => {
     await bootstrap;
-    const admin = await store.getAdmin();
+    const admin = store.findAdmin
+      ? await store.findAdmin(
+          String(req.body?.email || "")
+            .trim()
+            .toLowerCase(),
+        )
+      : await store.getAdmin();
     const password = req.body?.password;
     if (
       !admin ||
+      admin.active === false ||
       typeof password !== "string" ||
       password.length > 256 ||
       req.body?.email?.trim().toLowerCase() !== admin.email ||
@@ -129,6 +155,34 @@ export function installAuth(app, store, env) {
     if (!req.user) return res.status(401).json({ error: "Please sign in" });
     if (!["GET", "HEAD"].includes(req.method)) return origin(req, res, next);
     next();
+  });
+  app.use("/api", (req, res, next) => {
+    if (
+      (req.path.startsWith("/administrators") ||
+        req.path.startsWith("/backups") ||
+        (req.path === "/settings/email" && req.method !== "GET")) &&
+      req.user.role !== "owner"
+    )
+      return res.status(403).json({ error: "Workspace owner access required" });
+    next();
+  });
+  app.post("/api/account/password", async (req, res) => {
+    const a = store.findAdmin
+      ? await store.findAdmin(req.user.email)
+      : await store.getAdmin();
+    if (
+      typeof req.body?.currentPassword !== "string" ||
+      req.body.currentPassword.length > 256 ||
+      !timingSafeEqual(
+        scryptSync(req.body.currentPassword, a.salt, 64),
+        Buffer.from(a.passwordHash, "hex"),
+      )
+    )
+      return res.status(401).json({ error: "Current password is incorrect" });
+    await store.changePassword(a.email, credential(a.email, req.body.password));
+    await store.revokeSessions(a.email);
+    res.clearCookie("tc_session");
+    res.json({ ok: true });
   });
   app.post("/api/logout", async (req, res) => {
     const token = (req.headers.cookie || "").match(/tc_session=([^;]+)/)?.[1];

@@ -104,6 +104,7 @@
     @apply w-[246px] fixed left-0 top-0 bottom-0 bg-white border-r border-[#e3e9e1] px-5 pt-7 flex flex-col z-20;
   }
   .workspace {
+    flex-shrink: 0;
     @apply flex items-center gap-2.5 mt-8 mb-7 p-2.5 border border-[#e7ebe5] rounded-lg text-[11px] font-semibold;
   }
   .workspace small {
@@ -116,7 +117,7 @@
     @apply text-[9px] tracking-[.14em] text-[#929d95] font-semibold ml-3 mb-3;
   }
   .sidebar nav {
-    @apply flex flex-col gap-1;
+    @apply flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto;
   }
   .sidebar nav button {
     @apply flex items-center gap-3 px-3 py-3 text-[12px] rounded-lg text-[#7b877d] text-left hover:bg-[#f5f8f3];
@@ -128,6 +129,7 @@
     @apply ml-auto bg-[#d7e8d9] rounded-md px-1.5 py-0.5 text-[10px];
   }
   .sidebar-bottom {
+    flex-shrink: 0;
     @apply mt-auto;
   }
   .protected {
@@ -814,6 +816,7 @@
   .sidebar .workspace,
   .nav-label,
   .sidebar-bottom {
+    flex-shrink: 0;
     display: none;
   }
   .sidebar nav {
