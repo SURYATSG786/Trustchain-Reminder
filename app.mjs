@@ -1,5 +1,5 @@
 import express from "express";
-import { createStore } from "./server/store.mjs";
+import { createOrganizationStore as createStore } from "./server/services/organization.service.mjs";
 import { createApp } from "./server/app.mjs";
 const app = express();
 app.set("trust proxy", 1);

@@ -20,9 +20,10 @@ export function createSystemController({ store, env, email, sendReminders }) {
         hash(req.headers.authorization) !== hash(`Bearer ${env.CRON_SECRET}`)
       )
         return res.status(401).json({ error: "Invalid scheduler credentials" });
-      const jobs = {};
       if (req.path === "/api/cron/verify-email")
         return res.json({ email: await email.verify() });
+      const runJobs = async () => {
+        const jobs = {};
       if (req.path !== "/api/cron/backups")
         try {
           jobs.reminders = (await email.enabled())
@@ -39,9 +40,18 @@ export function createSystemController({ store, env, email, sendReminders }) {
         } catch (e) {
           jobs.backup = { error: e.message };
         }
-      res
-        .status(Object.values(jobs).some((j) => j.error) ? 503 : 200)
-        .json(jobs);
+        return jobs;
+      };
+      if (store.forEachWorkspace) {
+        const workspaces = [];
+        await store.forEachWorkspace(async () => {
+          workspaces.push({ tenantId: store.currentTenant(), ...(await runJobs()) });
+        });
+        const failed = workspaces.some(({ reminders, backup }) => reminders?.error || backup?.error);
+        return res.status(failed ? 503 : 200).json({ workspaces });
+      }
+      const jobs = await runJobs();
+      res.status(Object.values(jobs).some((j) => j.error) ? 503 : 200).json(jobs);
     },
     importWorkspace: async (req, res) => {
       if (
