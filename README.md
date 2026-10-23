@@ -1,3 +1,7 @@
+## Source structure
+
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the React pages/components and Express routes/controllers/services/models/repository layout and a presentation walkthrough. Source code is modular; `public/app.js` is the generated browser bundle.
+
 # TrustChain Compliance & Renewal Management — working application
 
 The application runs **React + Tailwind CSS, Node.js + Express.js, MongoDB, SHA-256, Proof of Work and Nodemailer**. Application data is stored in MongoDB. There is no demo mode, sample-data startup or runtime mock database.

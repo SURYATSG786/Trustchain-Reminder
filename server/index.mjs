@@ -1,5 +1,5 @@
-import { createBackup } from "./backups.mjs";
-import { createStore } from "./store.mjs";
+import { createBackup } from "./services/backup.service.mjs";
+import { createOrganizationStore as createStore } from "./services/organization.service.mjs";
 import { createApp } from "./app.mjs";
 import { randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
@@ -42,9 +42,13 @@ const tick = async () => {
     console.error("Reminder scan:", e.message);
   }
 };
-const timer = setInterval(tick, 60 * 60 * 1000);
+const scanWorkspaces = () =>
+  store
+    .forEachWorkspace(tick)
+    .catch((e) => console.error("Workspace scan:", e.message));
+const timer = setInterval(scanWorkspaces, 60 * 60 * 1000);
 timer.unref();
-setTimeout(tick, 5000).unref();
+setTimeout(scanWorkspaces, 5000).unref();
 const backupTick = async () => {
   if (process.env.BACKUP_ENCRYPTION_KEY)
     try {
@@ -53,7 +57,13 @@ const backupTick = async () => {
       console.error("Backup:", e.message);
     }
 };
-const backupTimer = setInterval(backupTick, 86400000);
+const backupTimer = setInterval(
+  () =>
+    store
+      .forEachWorkspace(backupTick)
+      .catch((e) => console.error("Backup scan:", e.message)),
+  86400000,
+);
 backupTimer.unref();
 const shutdown = () =>
   server.close(async () => {

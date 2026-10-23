@@ -1,0 +1,809 @@
+/* Adapted from LiteralAIII/frontend/src/styles/index.css.
+   Shared visual language: frosted surfaces, sky borders and raised gold actions.
+   Scoped to TrustChain so status colours, dialogs and authentication remain explicit. */
+.app-shell,
+.auth-scene {
+  --tc-sky: #055f9e;
+  --tc-ink: #18354a;
+  --tc-glass: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(240, 249, 255, 0.83) 48%,
+    rgba(243, 232, 255, 0.68)
+  );
+  --tc-border: rgba(119, 170, 196, 0.25);
+  --tc-depth:
+    0 14px 36px -18px rgba(3, 32, 56, 0.22), 0 3px 9px rgba(3, 32, 56, 0.035),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.96);
+  color: var(--tc-ink);
+  background: #eff8f8;
+  background-image:
+    radial-gradient(
+      ellipse at 7% 4%,
+      rgba(159, 220, 219, 0.3),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 89% 5%,
+      rgba(207, 200, 250, 0.28),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 72% 94%,
+      rgba(202, 234, 233, 0.28),
+      transparent 48%
+    );
+  background-attachment: fixed;
+}
+.app-shell .main-shell {
+  background: transparent;
+}
+.app-shell .sidebar {
+  background: linear-gradient(
+    165deg,
+    rgba(249, 255, 255, 0.92),
+    rgba(230, 243, 250, 0.87) 55%,
+    rgba(239, 234, 251, 0.86)
+  );
+  border-right: 1px solid rgba(151, 188, 204, 0.29);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.85),
+    6px 0 24px rgba(16, 69, 93, 0.035);
+}
+.app-shell .sidebar .logo {
+  color: #173c50;
+}
+.app-shell .sidebar .logo-dot {
+  color: #3294a7;
+}
+.app-shell .workspace {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(116, 167, 191, 0.25);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 4px 12px rgba(3, 32, 56, 0.03);
+  border-radius: 12px;
+}
+.app-shell .workspace b {
+  color: #345b70;
+}
+.app-shell .workspace small {
+  color: #8095a5;
+}
+.app-shell .workspace-symbol {
+  background: linear-gradient(145deg, #e8f7fc, #e7e5f8);
+  color: #4f829d;
+  border: 1px solid rgba(113, 162, 191, 0.2);
+  box-shadow: inset 0 1px 0 white;
+}
+.app-shell .sidebar .nav-label {
+  color: #8ba0af;
+}
+.app-shell .sidebar nav button {
+  color: #6d8798;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+.app-shell .sidebar nav button > svg {
+  color: #7d9baa;
+}
+.app-shell .sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: #235a7b;
+  border-color: rgba(255, 255, 255, 0.9);
+}
+.app-shell .sidebar nav button.active {
+  color: #12618a;
+  background: linear-gradient(
+    135deg,
+    rgba(222, 243, 253, 0.94),
+    rgba(223, 236, 250, 0.8)
+  );
+  border-color: rgba(112, 178, 209, 0.25);
+  box-shadow:
+    0 3px 10px rgba(42, 113, 151, 0.055),
+    inset 0 1px 0 #fff;
+}
+.app-shell .sidebar nav button.active > svg {
+  color: #3a8ab1;
+}
+.app-shell .nav-count {
+  background: rgba(71, 142, 181, 0.12);
+  color: #4c88a7;
+}
+.app-shell .sidebar-bottom {
+  border-top-color: rgba(119, 170, 196, 0.17);
+}
+.app-shell .user {
+  color: #4c6a80;
+}
+.app-shell .user small {
+  color: #8ca2b0;
+}
+.app-shell .user > svg {
+  color: #86a4b8;
+}
+.app-shell .sidebar .avatar,
+.app-shell .avatar {
+  color: #718aa8;
+  background: linear-gradient(145deg, #f5faff, #e2e9fa);
+  border: 1px solid rgba(130, 159, 189, 0.15);
+  box-shadow: inset 0 1px 0 white;
+}
+.app-shell .topbar {
+  background: linear-gradient(
+    180deg,
+    rgba(245, 252, 255, 0.86),
+    rgba(230, 244, 251, 0.69)
+  );
+  border-bottom: 1px solid rgba(119, 170, 196, 0.2);
+  backdrop-filter: blur(25px) saturate(160%);
+  -webkit-backdrop-filter: blur(25px) saturate(160%);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.9);
+}
+.app-shell .breadcrumb {
+  color: #8ca3b3;
+}
+.app-shell .breadcrumb b {
+  color: #4c7085;
+}
+.app-shell .today,
+.app-shell .bell-button {
+  color: #819dad;
+}
+.app-shell .heading-row h1 {
+  color: #234a62;
+}
+.app-shell .heading-row p {
+  color: #7c94a5;
+}
+.app-shell .panel,
+.app-shell .stat {
+  background: var(--tc-glass);
+  border: 1px solid var(--tc-border);
+  border-radius: 15px;
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  box-shadow: var(--tc-depth);
+}
+.app-shell .panel-heading {
+  border-bottom-color: rgba(142, 177, 199, 0.16);
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 15px 15px 0 0;
+}
+.app-shell .panel-heading h3 {
+  color: #35586f;
+}
+.app-shell .panel-heading p {
+  color: #8aa0b0;
+}
+.app-shell .panel-heading > svg {
+  color: #94b0bd;
+}
+.app-shell .stat > div > span:first-child {
+  color: #7391a5;
+}
+.app-shell .stat > b {
+  color: #2b506b;
+  font-weight: 650;
+}
+.app-shell .stat > small {
+  color: #8ba3b6;
+}
+.app-shell .stat-icon {
+  border: 1px solid rgba(138, 163, 192, 0.15);
+  background: linear-gradient(
+    145deg,
+    rgba(242, 245, 255, 0.95),
+    rgba(225, 232, 249, 0.72)
+  );
+  color: #8998c2;
+  box-shadow: inset 0 1px 0 white;
+}
+.app-shell .stat-icon.amber {
+  background: linear-gradient(145deg, #fffcf0, #fff1cb);
+  color: #c4a059;
+  border-color: #f3e6c5;
+}
+.app-shell .stat-icon.rose {
+  background: linear-gradient(145deg, #fff9fa, #f9e6e9);
+  color: #c99da7;
+}
+.app-shell .stat-icon.green {
+  background: linear-gradient(145deg, #f7fffc, #e0f2eb);
+  color: #84b4a2;
+}
+.app-shell .btn.primary,
+.auth-submit {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff6c4, #ffd633 50%, #ffb300);
+  color: #604700;
+  border: 1px solid rgba(195, 120, 0, 0.43);
+  border-bottom: 3px solid rgba(160, 95, 0, 0.55);
+  border-radius: 10px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 7px 15px rgba(224, 166, 29, 0.18),
+    0 2px 3px rgba(59, 40, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition:
+    transform 0.16s ease,
+    filter 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.app-shell .btn.primary::after,
+.auth-submit::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0 auto 0 -55%;
+  width: 40%;
+  background: linear-gradient(
+    115deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+.app-shell .btn.primary:hover:not(:disabled),
+.auth-submit:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fff8d2, #ffde50 50%, #ffbb24);
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+  box-shadow:
+    0 10px 20px rgba(224, 166, 29, 0.25),
+    0 2px 4px rgba(59, 40, 0, 0.09);
+}
+.app-shell .btn.primary:hover::after,
+.auth-submit:hover::after {
+  left: 140%;
+}
+.app-shell .btn.primary:active:not(:disabled),
+.auth-submit:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    0 3px 8px rgba(224, 166, 29, 0.16),
+    inset 0 1px 2px rgba(113, 79, 0, 0.12);
+}
+.app-shell .btn.primary:disabled,
+.auth-submit:disabled {
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+.app-shell .btn.primary:disabled::after,
+.auth-submit:disabled::after {
+  display: none;
+}
+.app-shell .btn.secondary {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.86),
+    rgba(241, 250, 254, 0.56)
+  );
+  border: 1px solid rgba(119, 166, 191, 0.27);
+  border-bottom: 2px solid rgba(119, 166, 191, 0.25);
+  box-shadow:
+    0 3px 9px rgba(3, 32, 56, 0.035),
+    inset 0 1px 0 white;
+  color: #58839d;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 9px;
+}
+.app-shell .btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(100, 157, 186, 0.4);
+}
+.app-shell .text-button {
+  color: #638ea9;
+}
+.app-shell .btn:focus-visible,
+.auth-submit:focus-visible {
+  outline: 3px solid rgba(26, 126, 183, 0.3);
+  outline-offset: 3px;
+}
+.app-shell .priority-strip {
+  background: linear-gradient(
+    120deg,
+    rgba(234, 245, 255, 0.73),
+    rgba(243, 236, 255, 0.62)
+  );
+  border: 1px solid rgba(166, 173, 212, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.app-shell .priority-icon {
+  background: rgba(170, 191, 229, 0.16);
+  color: #96a5c9;
+  box-shadow: inset 0 1px 0 #ffffffb0;
+}
+.app-shell .priority-strip b {
+  color: #6a7d9d;
+}
+.app-shell .priority-strip p {
+  color: #8c9ab4;
+}
+.app-shell .priority-strip > button {
+  color: #7a89ae;
+}
+.app-shell .upcoming {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(142, 177, 199, 0.12);
+}
+.app-shell .upcoming:hover {
+  background: rgba(255, 255, 255, 0.52);
+}
+.app-shell .date-tile {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(229, 242, 252, 0.65)
+  );
+  border: 1px solid rgba(150, 182, 203, 0.23);
+  box-shadow: inset 0 1px 0 white;
+}
+.app-shell .date-tile small {
+  color: #9ab0c0;
+}
+.app-shell .date-tile b {
+  color: #7799b2;
+}
+.app-shell .upcoming-info b {
+  color: #607d96;
+}
+.app-shell .upcoming-info small {
+  color: #9aaebe;
+}
+.app-shell .days-pill {
+  background: rgba(220, 227, 248, 0.45);
+  color: #939ac1;
+}
+.app-shell .days-pill.urgent {
+  background: rgba(255, 239, 202, 0.65);
+  color: #bfa16c;
+}
+.app-shell .donut > div {
+  background: linear-gradient(145deg, #f8fcff, #f0f4fc);
+  box-shadow: inset 0 1px 2px rgba(153, 182, 203, 0.07);
+}
+.app-shell .donut b {
+  color: #607c9a;
+}
+.app-shell .donut span {
+  color: #9aacbc;
+}
+.app-shell .health-legend span {
+  color: #8ba2b6;
+}
+.app-shell .table-wrap thead {
+  background: rgba(228, 240, 250, 0.42);
+}
+.app-shell th {
+  border-color: rgba(142, 177, 199, 0.16);
+  color: #8ba6ba;
+}
+.app-shell td {
+  border-color: rgba(142, 177, 199, 0.13);
+  color: #8ba1b4;
+  background: transparent;
+}
+.app-shell tbody tr:hover {
+  background: rgba(255, 255, 255, 0.52);
+}
+.app-shell .record-name b {
+  color: #64829b;
+}
+.app-shell td small {
+  color: #9aafc1;
+}
+.app-shell .file-icon {
+  background: linear-gradient(145deg, #f1faff, #e7edf9);
+  border: 1px solid rgba(155, 184, 210, 0.17);
+  color: #93a7c4;
+}
+.app-shell .avatar.small {
+  background: rgba(228, 237, 250, 0.55);
+  color: #96a9c4;
+}
+.app-shell .tabs button.active {
+  background: linear-gradient(135deg, #e1f0fa, #e7eaf9);
+  border: 1px solid rgba(117, 168, 198, 0.2);
+  color: #648eac;
+  box-shadow: inset 0 1px 0 white;
+}
+.app-shell .toolbar {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(145, 179, 202, 0.22);
+}
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(120, 164, 191, 0.3);
+  box-shadow:
+    inset 0 2px 4px rgba(3, 32, 56, 0.025),
+    0 1px 0 rgba(255, 255, 255, 0.6);
+  border-radius: 9px;
+  color: #526f88;
+}
+.app-shell input:focus,
+.app-shell select:focus,
+.app-shell textarea:focus {
+  border-color: #86adc5;
+  box-shadow: 0 0 0 3px rgba(71, 148, 192, 0.1);
+}
+.app-shell .modal,
+.app-shell .detail {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(236, 246, 254, 0.93)
+  );
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(177, 202, 220, 0.6);
+  box-shadow:
+    0 30px 90px rgba(20, 65, 91, 0.2),
+    inset 0 1px 0 white;
+}
+.app-shell .overlay {
+  background: rgba(24, 54, 77, 0.27);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+/* The same button and material language on sign-in and registration. */
+.auth-scene {
+  padding: 22px;
+  gap: 22px;
+  grid-template-columns: 1fr 1fr;
+}
+.auth-brand {
+  min-height: calc(100svh - 44px);
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(15, 58, 79, 0.97),
+    rgba(32, 85, 104, 0.96) 62%,
+    rgba(51, 102, 118, 0.93)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 20px 50px rgba(29, 80, 103, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.19);
+}
+.auth-brand::before {
+  opacity: 0.08;
+}
+.auth-brand h1 {
+  color: #f4fbff;
+}
+.auth-brand h1 em {
+  color: #f1d693;
+}
+.auth-brand-copy > p {
+  color: #afc9d3;
+}
+.auth-brand .logo-dot {
+  color: #b9e5eb;
+}
+.auth-entry {
+  min-height: calc(100svh - 44px);
+  padding: 25px 34px;
+  background: transparent;
+}
+.auth-form-wrap {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.8),
+    rgba(243, 249, 255, 0.66),
+    rgba(242, 236, 252, 0.48)
+  );
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(159, 185, 204, 0.29);
+  box-shadow: var(--tc-depth);
+  border-radius: 21px;
+  max-width: 430px;
+  padding: 36px;
+}
+.auth-form-wrap h2 {
+  color: #24475c;
+  font-size: 32px;
+}
+.auth-intro {
+  color: #839cae;
+  font-size: 12px;
+}
+.auth-input {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(133, 174, 195, 0.32);
+  border-radius: 10px;
+  color: #97b1bf;
+  box-shadow:
+    inset 0 2px 4px rgba(3, 32, 56, 0.025),
+    0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.auth-input:focus-within {
+  border-color: #7da8c5;
+  box-shadow: 0 0 0 3px rgba(5, 95, 158, 0.09);
+}
+.auth-input input {
+  color: #456d85;
+}
+.auth-input input::placeholder {
+  color: #a1b5c2;
+}
+.auth-form label {
+  color: #66879c;
+}
+.auth-reveal {
+  color: #84a2b8;
+}
+.auth-switch {
+  color: #9bafbe;
+}
+.auth-switch button {
+  color: #7499b3;
+}
+.auth-document {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(228, 242, 252, 0.92),
+    rgba(238, 229, 252, 0.88)
+  );
+  color: #496b80;
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 22px 50px rgba(4, 35, 60, 0.24),
+    inset 0 1px 0 white;
+}
+.auth-doc-icon {
+  background: rgba(132, 174, 198, 0.12);
+  color: #7297b1;
+}
+.auth-doc-top small {
+  color: #8fa8bb;
+}
+.auth-doc-line {
+  background: #c9d9e8;
+}
+.auth-doc-line.short {
+  background: #dbe6ee;
+}
+.auth-doc-bottom {
+  border-color: #cbdde9;
+  color: #80a1b2;
+}
+.auth-doc-bottom i {
+  background: #90bcbd;
+}
+.auth-orbit {
+  border-color: #bddce822;
+}
+.auth-art-caption {
+  color: #96bdcb;
+}
+.auth-document .auth-doc-top > svg {
+  color: #8ca7c4;
+}
+@media (max-width: 1000px) {
+  .auth-scene {
+    padding: 15px;
+    gap: 12px;
+  }
+  .auth-brand {
+    min-height: calc(100svh - 30px);
+  }
+  .auth-entry {
+    padding: 15px;
+    min-height: calc(100svh - 30px);
+  }
+  .auth-form-wrap {
+    padding: 28px;
+  }
+  .auth-form-wrap h2 {
+    font-size: 29px;
+  }
+}
+@media (max-width: 800px) {
+  .app-shell .sidebar {
+    border-bottom: 1px solid rgba(141, 180, 201, 0.23);
+    border-right: 0;
+  }
+  .app-shell .sidebar-bottom .user > svg {
+    color: #8cacc0;
+  }
+  .app-shell .panel,
+  .app-shell .stat {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+@media (max-width: 700px) {
+  .auth-scene {
+    padding: 18px;
+    min-height: 100svh;
+  }
+  .auth-entry {
+    padding: 0;
+    min-height: calc(100svh - 36px);
+  }
+  .auth-form-wrap {
+    padding: 28px 24px;
+    max-width: 430px;
+    margin: auto;
+    border-radius: 20px;
+  }
+  .auth-mobile-logo {
+    margin-bottom: 30px;
+  }
+  .auth-mobile-logo .logo {
+    color: #31566f;
+  }
+  .auth-mobile-logo .logo-dot {
+    color: #86bdc5;
+  }
+}
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .app-shell .panel,
+  .app-shell .stat,
+  .auth-form-wrap {
+    background: #f8fcff;
+  }
+  .app-shell .sidebar {
+    background: #eaf3fa;
+  }
+  .app-shell .topbar {
+    background: #eef8fc;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .btn.primary,
+  .auth-submit {
+    transition: none;
+  }
+  .app-shell .btn.primary::after,
+  .auth-submit::after {
+    display: none;
+  }
+  .app-shell .btn.primary:hover:not(:disabled),
+  .auth-submit:hover:not(:disabled),
+  .app-shell .btn.primary:active:not(:disabled),
+  .auth-submit:active:not(:disabled) {
+    transform: none;
+  }
+}
+/* Keep text crisp against the translucent material. */
+.app-shell .sidebar nav button {
+  font-size: 12px;
+  color: #58788f;
+}
+.app-shell .sidebar nav button.active {
+  color: #185e84;
+}
+.app-shell .sidebar .nav-label {
+  color: #7b95a9;
+}
+.app-shell .workspace b {
+  color: #35576e;
+}
+.app-shell .workspace small {
+  color: #728da1;
+}
+.app-shell .heading-row p {
+  font-size: 12px;
+  color: #6c879d;
+}
+.app-shell .stat > div > span:first-child {
+  font-size: 12px;
+  color: #607f96;
+}
+.app-shell .stat > small {
+  font-size: 10px;
+  color: #7e96ab;
+}
+.app-shell .panel-heading h3 {
+  font-size: 14px;
+  color: #35586f;
+}
+.app-shell .panel-heading p {
+  font-size: 11px;
+  color: #7993a8;
+}
+.app-shell .upcoming-info b {
+  font-size: 12px;
+  color: #526f88;
+}
+.app-shell .upcoming-info small {
+  font-size: 10px;
+  color: #829bb0;
+}
+.app-shell .health-legend span {
+  font-size: 11px;
+  color: #7992aa;
+}
+.app-shell .text-button {
+  font-size: 11px;
+  color: #5a829e;
+}
+.app-shell .priority-strip b {
+  font-size: 12px;
+  color: #627897;
+}
+.app-shell .priority-strip p {
+  font-size: 11px;
+  color: #8192ac;
+}
+.app-shell .priority-strip > button {
+  font-size: 11px;
+}
+.app-shell .record-name b {
+  font-size: 12px;
+  color: #52738d;
+}
+.app-shell td {
+  font-size: 12px;
+  color: #7590a6;
+}
+.app-shell td small {
+  font-size: 10px;
+  color: #869eb4;
+}
+.app-shell th {
+  font-size: 10px;
+  color: #7a96ad;
+}
+.app-shell .user {
+  color: #4e7088;
+}
+.auth-intro {
+  color: #6d8a9f;
+}
+.auth-form label {
+  color: #53748d;
+}
+.auth-form-wrap h2 {
+  color: #24475c;
+}
+.auth-switch {
+  color: #8199ac;
+}
+.auth-switch button {
+  color: #597f9e;
+}
+@media (max-width: 1100px) and (min-width: 801px) {
+  .app-shell .sidebar nav button {
+    font-size: 11px;
+  }
+  .app-shell .stat > small {
+    font-size: 9px;
+  }
+  .app-shell .stat > div > span:first-child {
+    font-size: 11px;
+  }
+}
+@media (max-width: 800px) {
+  .app-shell .sidebar nav button {
+    font-size: 11px;
+  }
+  .app-shell .stat > div > span:first-child {
+    font-size: 11px;
+  }
+  .app-shell .priority-strip p {
+    font-size: 10px;
+  }
+}
